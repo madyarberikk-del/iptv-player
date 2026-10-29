@@ -111,9 +111,14 @@ class MainActivity : AppCompatActivity() {
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.add_playlist)
             .setView(box)
+            .setMessage(R.string.add_playlist_hint)
             .setPositiveButton(R.string.load) { _, _ ->
                 val url = input.text.toString().trim()
-                if (url.isNotEmpty()) loadFromUrl(url)
+                when {
+                    url.isEmpty() -> Unit
+                    YouTube.isYouTube(url) -> openYouTube(url)
+                    else -> loadFromUrl(url)
+                }
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
@@ -203,9 +208,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun play(position: Int) {
-        if (position !in shown.indices) return
-        PlayerActivity.queue = shown
-        startActivity(Intent(this, PlayerActivity::class.java).putExtra(PlayerActivity.EXTRA_INDEX, position))
+        val ch = shown.getOrNull(position) ?: return
+        if (YouTube.isYouTube(ch.url)) { openYouTube(ch.url); return }
+        // В очередь плеера — только потоки; ссылки YouTube открываются отдельно
+        val streams = shown.filterNot { YouTube.isYouTube(it.url) }
+        PlayerActivity.queue = streams
+        startActivity(
+            Intent(this, PlayerActivity::class.java)
+                .putExtra(PlayerActivity.EXTRA_INDEX, streams.indexOf(ch))
+        )
+    }
+
+    private fun openYouTube(url: String) {
+        if (YouTube.videoId(url) == null) {
+            toast(getString(R.string.yt_need_video_link))
+            return
+        }
+        startActivity(Intent(this, YouTubeActivity::class.java).putExtra(YouTubeActivity.EXTRA_URL, url))
     }
 
     private fun toggleFavorite(ch: Channel) {

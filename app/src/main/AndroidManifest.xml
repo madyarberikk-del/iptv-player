@@ -25,5 +25,11 @@
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:screenOrientation="sensorLandscape"
             android:theme="@style/Theme.IptvPlayer.Player" />
+
+        <activity
+            android:name=".YouTubeActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@style/Theme.IptvPlayer.Player" />
     </application>
 </manifest>

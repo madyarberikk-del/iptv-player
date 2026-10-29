@@ -23,4 +23,12 @@
     <string name="fav_added">«%s» добавлен в избранное</string>
     <string name="fav_removed">«%s» убран из избранного</string>
     <string name="channel_unavailable">Канал недоступен (%s)</string>
+    <string name="add_playlist_hint">Ссылка на плейлист M3U или на видео YouTube</string>
+    <string name="yt_need_video_link">Нужна ссылка на конкретное видео или трансляцию YouTube, например youtube.com/watch?v=… или youtu.be/…</string>
+    <string name="yt_open_in_app">Открыть в YouTube</string>
+    <string name="yt_no_app">Приложение YouTube не найдено на телефоне</string>
+    <string name="yt_error_bad_id">Неверная ссылка на видео (код %d)</string>
+    <string name="yt_error_not_found">Видео не найдено, удалено или закрыто владельцем (код %d)</string>
+    <string name="yt_error_embed_disabled">Владелец видео запретил просмотр вне YouTube (код %d)</string>
+    <string name="yt_error_other">YouTube не смог воспроизвести видео (код %d)</string>
 </resources>
