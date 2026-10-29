@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">IPTV Player</string>
+    <string name="search">Поиск</string>
+    <string name="search_hint">Название канала</string>
+    <string name="favorites">Избранное</string>
+    <string name="add_playlist">Добавить плейлист</string>
+    <string name="add_playlist_url">Плейлист по ссылке</string>
+    <string name="open_file">Открыть файл M3U</string>
+    <string name="refresh">Обновить плейлист</string>
+    <string name="load">Загрузить</string>
+    <string name="back">Назад</string>
+    <string name="last_watched">Последний просмотренный</string>
+    <string name="all_groups">Все группы</string>
+    <string name="channels_n">Каналов: %d</string>
+    <string name="loaded_n">Загружено каналов: %d</string>
+    <string name="load_error">Не удалось загрузить: %s</string>
+    <string name="no_url">Плейлист загружен из файла — обновлять нечего</string>
+    <string name="no_channels_in_file">в плейлисте нет каналов</string>
+    <string name="empty_no_playlist">Добавьте плейлист M3U по ссылке или из файла.\nИспользуйте только плейлисты, на которые у вас есть права.</string>
+    <string name="empty_no_favorites">В избранном пока пусто.\nДолгое нажатие на канал — добавить в избранное.</string>
+    <string name="empty_not_found">Ничего не найдено</string>
+    <string name="fav_added">«%s» добавлен в избранное</string>
+    <string name="fav_removed">«%s» убран из избранного</string>
+    <string name="channel_unavailable">Канал недоступен (%s)</string>
+</resources>
