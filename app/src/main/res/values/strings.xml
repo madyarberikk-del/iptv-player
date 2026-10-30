@@ -22,7 +22,11 @@
     <string name="empty_not_found">Ничего не найдено</string>
     <string name="fav_added">«%s» добавлен в избранное</string>
     <string name="fav_removed">«%s» убран из избранного</string>
-    <string name="channel_unavailable">Канал недоступен (%s)</string>
+    <string name="channel_unavailable">Канал недоступен: %s</string>
+    <string name="aspect">Масштаб изображения</string>
+    <string name="prev_channel">Предыдущий канал</string>
+    <string name="next_channel">Следующий канал</string>
+    <string name="play_pause">Пауза / продолжить</string>
     <string name="add_playlist_hint">Ссылка на плейлист M3U или на видео YouTube</string>
     <string name="yt_need_video_link">Нужна ссылка на конкретное видео или трансляцию YouTube, например youtube.com/watch?v=… или youtu.be/…</string>
     <string name="yt_open_in_app">Открыть в YouTube</string>

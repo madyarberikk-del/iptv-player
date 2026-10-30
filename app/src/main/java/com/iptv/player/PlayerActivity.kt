@@ -1,39 +1,46 @@
 package com.iptv.player
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
-import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
-import androidx.media3.common.MimeTypes
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.ui.PlayerView
+import androidx.core.view.isVisible
 import com.iptv.player.databinding.ActivityPlayerBinding
+import org.videolan.libvlc.LibVLC
+import org.videolan.libvlc.Media
+import org.videolan.libvlc.MediaPlayer
 
-@OptIn(UnstableApi::class)
+/**
+ * Просмотр потоков на движке VLC: декодирует почти любые форматы IPTV (MPEG-2, H.264, H.265 в TS/HLS).
+ * Сначала пробует аппаратный декодер телефона, при неудаче — программный.
+ */
 class PlayerActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_INDEX = "index"
         /** Список каналов для переключения «вперёд/назад» (передаётся из MainActivity). */
         var queue: List<Channel> = emptyList()
+
+        private const val CONTROLS_TIMEOUT_MS = 4000L
+        private val SCALES = arrayOf(
+            MediaPlayer.ScaleType.SURFACE_BEST_FIT,
+            MediaPlayer.ScaleType.SURFACE_FIT_SCREEN,
+            MediaPlayer.ScaleType.SURFACE_FILL,
+        )
     }
 
     private lateinit var b: ActivityPlayerBinding
     private lateinit var storage: Storage
-    private var player: ExoPlayer? = null
+    private var libVlc: LibVLC? = null
+    private var player: MediaPlayer? = null
     private var index = 0
+    private var scale = 0
+
+    private val hideControls = Runnable { showControls(false) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,80 +57,100 @@ class PlayerActivity : AppCompatActivity() {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
-        b.playerView.setControllerVisibilityListener(
-            PlayerView.ControllerVisibilityListener { b.topBar.visibility = it }
-        )
+        b.root.setOnClickListener { showControls(!b.topBar.isVisible) }
         b.back.setOnClickListener { finish() }
+        b.prev.setOnClickListener { play(index - 1) }
+        b.next.setOnClickListener { play(index + 1) }
+        b.playPause.setOnClickListener {
+            player?.let { if (it.isPlaying) it.pause() else it.play() }
+            showControls(true)
+        }
+        b.aspect.setOnClickListener {
+            scale = (scale + 1) % SCALES.size
+            player?.videoScale = SCALES[scale]
+            showControls(true)
+        }
     }
 
     override fun onStart() {
         super.onStart()
         if (queue.isEmpty()) return
-        initPlayer()
+        val vlc = LibVLC(this, arrayListOf("--network-caching=2000", "--http-reconnect"))
+        libVlc = vlc
+        player = MediaPlayer(vlc).also {
+            it.attachViews(b.videoLayout, null, false, false)
+            it.videoScale = SCALES[scale]
+            it.setEventListener(::onPlayerEvent)
+        }
+        play(index)
     }
 
     override fun onStop() {
         super.onStop()
-        player?.let { index = it.currentMediaItemIndex; it.release() }
+        b.root.removeCallbacks(hideControls)
+        player?.run {
+            setEventListener(null)
+            stop()
+            detachViews()
+            release()
+        }
         player = null
+        libVlc?.release()
+        libVlc = null
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(EXTRA_INDEX, player?.currentMediaItemIndex ?: index)
+        outState.putInt(EXTRA_INDEX, index)
     }
 
-    private fun initPlayer() {
-        val http = DefaultHttpDataSource.Factory()
-            .setUserAgent(Storage.USER_AGENT)
-            .setAllowCrossProtocolRedirects(true)
-            .setConnectTimeoutMs(15_000)
-            .setReadTimeoutMs(20_000)
-        val mediaSourceFactory = DefaultMediaSourceFactory(DefaultDataSource.Factory(this, http))
-
-        val items = queue.map { ch ->
-            MediaItem.Builder()
-                .setUri(ch.url)
-                .setMediaId(ch.url)
-                .setMediaMetadata(MediaMetadata.Builder().setTitle(ch.name).build())
-                .apply { if (ch.url.contains(".m3u8", ignoreCase = true)) setMimeType(MimeTypes.APPLICATION_M3U8) }
-                .build()
-        }
-
-        player = ExoPlayer.Builder(this)
-            .setMediaSourceFactory(mediaSourceFactory)
-            .build()
-            .also { p ->
-                b.playerView.player = p
-                p.addListener(listener)
-                p.setMediaItems(items, index.coerceIn(items.indices), 0L)
-                p.prepare()
-                p.playWhenReady = true
-            }
-        updateTitle()
-    }
-
-    private val listener = object : Player.Listener {
-        override fun onMediaItemTransition(item: MediaItem?, reason: Int) = updateTitle()
-
-        override fun onPlayerError(error: PlaybackException) {
-            b.progress.visibility = View.GONE
-            Toast.makeText(
-                this@PlayerActivity,
-                getString(R.string.channel_unavailable, error.errorCodeName),
-                Toast.LENGTH_LONG,
-            ).show()
-        }
-
-        override fun onPlaybackStateChanged(state: Int) {
-            b.progress.visibility = if (state == Player.STATE_BUFFERING) View.VISIBLE else View.GONE
-        }
-    }
-
-    private fun updateTitle() {
+    private fun play(i: Int) {
         val p = player ?: return
-        val ch = queue.getOrNull(p.currentMediaItemIndex) ?: return
+        val vlc = libVlc ?: return
+        index = (i + queue.size) % queue.size
+        val ch = queue[index]
         b.title.text = ch.name
         storage.lastChannelUrl = ch.url
+
+        val media = Media(vlc, Uri.parse(ch.url)).apply {
+            // true, false — аппаратное декодирование с откатом на программное
+            setHWDecoderEnabled(true, false)
+            addOption(":http-user-agent=${Storage.USER_AGENT}")
+        }
+        p.media = media
+        media.release()
+        p.play()
+
+        b.progress.isVisible = true
+        showControls(true)
+    }
+
+    private fun onPlayerEvent(event: MediaPlayer.Event) {
+        when (event.type) {
+            MediaPlayer.Event.Buffering -> b.progress.isVisible = event.buffering < 100f
+            MediaPlayer.Event.Playing -> {
+                b.progress.isVisible = false
+                b.playPause.setImageResource(R.drawable.ic_pause)
+            }
+            MediaPlayer.Event.Paused, MediaPlayer.Event.Stopped, MediaPlayer.Event.EndReached ->
+                b.playPause.setImageResource(R.drawable.ic_play)
+            MediaPlayer.Event.EncounteredError -> {
+                b.progress.isVisible = false
+                b.playPause.setImageResource(R.drawable.ic_play)
+                Toast.makeText(
+                    this,
+                    getString(R.string.channel_unavailable, queue[index].name),
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
+        }
+    }
+
+    private fun showControls(show: Boolean) {
+        val v = if (show) View.VISIBLE else View.GONE
+        b.topBar.visibility = v
+        b.bottomBar.visibility = v
+        b.root.removeCallbacks(hideControls)
+        if (show) b.root.postDelayed(hideControls, CONTROLS_TIMEOUT_MS)
     }
 }

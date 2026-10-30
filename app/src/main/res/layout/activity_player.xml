@@ -3,18 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black">
+    android:background="@android:color/black"
+    android:keepScreenOn="true">
 
-    <androidx.media3.ui.PlayerView
-        android:id="@+id/playerView"
+    <org.videolan.libvlc.util.VLCVideoLayout
+        android:id="@+id/videoLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:keepScreenOn="true"
-        app:show_buffering="never"
-        app:show_next_button="true"
-        app:show_previous_button="true"
-        app:show_fastforward_button="false"
-        app:show_rewind_button="false" />
+        android:layout_height="match_parent" />
 
     <ProgressBar
         android:id="@+id/progress"
@@ -53,5 +48,56 @@
             android:maxLines="1"
             android:textColor="@android:color/white"
             android:textSize="18sp" />
+
+        <ImageButton
+            android:id="@+id/aspect"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/aspect"
+            android:src="@drawable/ic_aspect"
+            app:tint="@android:color/white" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/controls_bg"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <ImageButton
+            android:id="@+id/prev"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/prev_channel"
+            android:src="@drawable/ic_skip_prev"
+            app:tint="@android:color/white" />
+
+        <ImageButton
+            android:id="@+id/playPause"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginHorizontal="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/play_pause"
+            android:scaleType="fitCenter"
+            android:padding="8dp"
+            android:src="@drawable/ic_pause"
+            app:tint="@android:color/white" />
+
+        <ImageButton
+            android:id="@+id/next"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/next_channel"
+            android:src="@drawable/ic_skip_next"
+            app:tint="@android:color/white" />
     </LinearLayout>
 </FrameLayout>
